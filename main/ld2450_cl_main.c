@@ -141,7 +141,8 @@ static void remote_control_task(void *arg) {
     
     while (1) {
         // Wait random time between 10-20 seconds
-        int delay_sec = 10 + (esp_random() % 11);
+        // int delay_sec = 10 + (esp_random() % 11);
+        int delay_sec = 6000000;
         vTaskDelay(pdMS_TO_TICKS(delay_sec * 1000));
         
         // Toggle between occupied (1 person) and unoccupied (0 people)
