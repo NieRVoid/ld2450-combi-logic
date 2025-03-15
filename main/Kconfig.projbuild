@@ -1,0 +1,24 @@
+menu "LD2450 Combinational Logic Configuration"
+
+    config CL_UART_PORT
+        int "UART port number"
+        default 2
+        range 0 2
+        help
+            UART port number to use for communication with the LD2450 radar.
+
+    config CL_UART_RX_PIN
+        int "UART RX pin"
+        default 16
+        range 0 39
+        help
+            GPIO pin number to use for UART RX.
+
+    config CL_UART_TX_PIN
+        int "UART TX pin"
+        default 17
+        range 0 39
+        help
+            GPIO pin number to use for UART TX.
+
+endmenu
