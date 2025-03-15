@@ -1,8 +1,8 @@
 /**
  * @file main.c
- * @brief Occupancy management system test with multiple data sources
+ * @brief Occupancy management system with multiple data sources
  *
- * This application uses occupancy_manager to combine data from:
+ * This application combines occupancy data from:
  * - LD2450 radar people counter (RELIABILITY_LOW)
  * - Simulated remote control inputs (RELIABILITY_MEDIUM)
  * - Physical BOOT button on GPIO0 (RELIABILITY_HIGH)
@@ -113,9 +113,6 @@ static void IRAM_ATTR button_isr_handler(void *arg) {
 
 /**
  * @brief Task to handle button presses
- * 
- * Simulates a physical presence button that simply indicates
- * someone is in the room (presence detection)
  */
 static void button_task(void *arg) {
     uint32_t io_num;
@@ -124,12 +121,11 @@ static void button_task(void *arg) {
         if (xQueueReceive(button_evt_queue, &io_num, portMAX_DELAY)) {
             ESP_LOGI(TAG, "[BUTTON] Boot button pressed - Room is OCCUPIED");
             
-            // Simulate physical presence button - indicates someone is in the room
-            // Update occupancy manager with high reliability presence information
-            esp_err_t ret = occupancy_manager_trigger_presence(button_source_id, 1);
+            // Direct update with high reliability input
+            esp_err_t ret = occupancy_manager_update_count(button_source_id, 1, true);
             
             if (ret != ESP_OK) {
-                ESP_LOGW(TAG, "[BUTTON] Failed to trigger presence: %s", esp_err_to_name(ret));
+                ESP_LOGW(TAG, "[BUTTON] Failed to update occupancy: %s", esp_err_to_name(ret));
             } else {
                 ESP_LOGI(TAG, "[BUTTON] Updated occupancy manager: Room is OCCUPIED");
             }
@@ -145,8 +141,7 @@ static void remote_control_task(void *arg) {
     
     while (1) {
         // Wait random time between 10-20 seconds
-        // int delay_sec = 10 + (esp_random() % 11);
-        int delay_sec = 10000 ;
+        int delay_sec = 10 + (esp_random() % 11);
         vTaskDelay(pdMS_TO_TICKS(delay_sec * 1000));
         
         // Toggle between occupied (1 person) and unoccupied (0 people)
@@ -177,26 +172,9 @@ static void diagnostics_task(void *arg) {
         
         ESP_LOGI(TAG, "===== DIAGNOSTIC INFO =====");
         
-        // Get firmware version info
-        ld2450_firmware_version_t version;
-        esp_err_t ret = ld2450_get_firmware_version(&version);
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "[LD2450] Firmware: %s", version.version_string);
-        } else {
-            ESP_LOGW(TAG, "[LD2450] Failed to get firmware version: %s", esp_err_to_name(ret));
-        }
-        
-        // Get LD2450 tracking mode
-        ld2450_tracking_mode_t mode;
-        ret = ld2450_get_tracking_mode(&mode);
-        if (ret == ESP_OK) {
-            ESP_LOGI(TAG, "[LD2450] Tracking mode: %s", 
-                     mode == LD2450_MODE_SINGLE_TARGET ? "Single target" : "Multi-target");
-        }
-        
         // Get current occupancy status
         occupancy_status_t status;
-        ret = occupancy_manager_get_status(&status);
+        esp_err_t ret = occupancy_manager_get_status(&status);
         
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "[OCCUPANCY] Room status: %s", 
@@ -223,6 +201,8 @@ static void diagnostics_task(void *arg) {
 }
 
 void app_main(void) {
+    esp_err_t ret;
+    
     // Print header
     ESP_LOGI(TAG, "====================================");
     ESP_LOGI(TAG, "Occupancy Management System Test");
@@ -274,7 +254,7 @@ void app_main(void) {
     radar_config.uart_tx_pin = 17;
     radar_config.uart_baud_rate = 256000;
     
-    esp_err_t ret = ld2450_init(&radar_config);
+    ret = ld2450_init(&radar_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize radar: %s", esp_err_to_name(ret));
         return;
@@ -287,14 +267,21 @@ void app_main(void) {
         return;
     }
     
-    ESP_LOGI(TAG, "LD2450 radar driver initialized");
-    
-    // Get and display radar firmware version
+    // Display firmware and configuration info once at initialization
     ld2450_firmware_version_t version;
     ret = ld2450_get_firmware_version(&version);
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "LD2450 Firmware: %s", version.version_string);
     }
+    
+    ld2450_tracking_mode_t mode;
+    ret = ld2450_get_tracking_mode(&mode);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "LD2450 Tracking mode: %s", 
+                 mode == LD2450_MODE_SINGLE_TARGET ? "Single target" : "Multi-target");
+    }
+    
+    ESP_LOGI(TAG, "LD2450 radar driver initialized");
     
     // Initialize people counter
     people_counter_config_t pc_config = PEOPLE_COUNTER_DEFAULT_CONFIG();
