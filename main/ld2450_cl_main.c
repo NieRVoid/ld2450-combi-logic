@@ -372,7 +372,7 @@ static void people_counter_callback(int count, int entries, int exits, void *con
     ESP_LOGI(TAG, "┌────────────────────────────────────────────────────┐");
     ESP_LOGI(TAG, "│                   PEOPLE COUNTER                   │");
     ESP_LOGI(TAG, "├───────────────┬──────────────────┬─────────────────┤");
-    ESP_LOGI(TAG, "│ Current: %s%d │ Total Entry: %2d │ Total Exit: %2d │",
+    ESP_LOGI(TAG, "│ Current: %s %d │ Total Entry: %2d │ Total Exit: %2d │",
         trend, count, entries, exits);
     ESP_LOGI(TAG, "└───────────────┴──────────────────┴─────────────────┘");
     
