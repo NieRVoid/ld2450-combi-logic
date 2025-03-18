@@ -279,8 +279,8 @@ static void remote_control_task(void *arg)
     int simulated_count = 0;
     
     while (1) {
-        // Simulate receiving a remote command every 3000 seconds
-        vTaskDelay(pdMS_TO_TICKS(300000));
+        // Simulate receiving a remote command every 30000 seconds
+        vTaskDelay(pdMS_TO_TICKS(3000000));
         
         ESP_LOGI(TAG, "╭───────────────────────────────────╮");
         ESP_LOGI(TAG, "│      REMOTE CONTROL COMMAND       │");
